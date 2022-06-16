@@ -157,4 +157,6 @@ def main():
     obu3.loop_stop()
 
 
-main()
+
+if __name__ == "__main__":
+    main()

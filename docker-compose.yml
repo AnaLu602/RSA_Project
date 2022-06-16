@@ -1,20 +1,20 @@
 version: '2.4'
 services:
-    rsu:
-        hostname: rsu
-        image: vanetza:test
-        environment:
-            - VANETZA_STATION_ID=1
-            - VANETZA_STATION_TYPE=15
-            - VANETZA_MAC_ADDRESS=6e:06:e0:03:00:01
-            - VANETZA_INTERFACE=eth0
-            - VANETZA_CAM_PERIODICITY=0
-            - START_EMBEDDED_MOSQUITTO=true
-        networks:
-            vanetzalan0:
-                ipv4_address: 192.168.98.10
-        sysctls:      
-            kernel.msgmax:  16384
+    # rsu:
+    #     hostname: rsu
+    #     image: vanetza:test
+    #     environment:
+    #         - VANETZA_STATION_ID=1
+    #         - VANETZA_STATION_TYPE=15
+    #         - VANETZA_MAC_ADDRESS=6e:06:e0:03:00:01
+    #         - VANETZA_INTERFACE=eth0
+    #         - VANETZA_CAM_PERIODICITY=0
+    #         - START_EMBEDDED_MOSQUITTO=true
+    #     networks:
+    #         vanetzalan0:
+    #             ipv4_address: 192.168.98.10
+    #     sysctls:      
+    #         kernel.msgmax:  16384
 
     obu1:
         hostname: obu1

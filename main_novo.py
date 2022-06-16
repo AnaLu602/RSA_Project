@@ -2,11 +2,14 @@ import paho.mqtt.client as mqtt
 import json
 import time
 
+
 def publish_cam(client, message):
     client.publish("vanetza/in/cam", message)
 
+
 def publish_denm(client, message):
     client.publish("vanetza/in/denm", message)
+
 
 def message_cam(coordenates):
     message = {
@@ -23,9 +26,9 @@ def message_cam(coordenates):
         "gasPedal": False,
         "heading": 3601,
         "headingConf": 127,
-        "latitude": 400000000,
-        "length": 100,
-        "longitude": -80000000,
+        "latitude": 40.0000000,
+        "length": 10.0,
+        "longitude": -8.0000000,
         "semiMajorConf": 4095,
         "semiMajorOrient": 3601,
         "semiMinorConf": 4095,
@@ -39,7 +42,7 @@ def message_cam(coordenates):
         "speedLimiter": True,
         "stationID": 1,
         "stationType": 15,
-        "width": 30,
+        "width": 3.0,
         "yawRate": 0
     }
 
@@ -47,6 +50,7 @@ def message_cam(coordenates):
     message["longitude"] = coordenates["longitude"]
 
     return json.dumps(message)
+
 
 def message_demn(causeCode, subCauseCode, detectionTime, eventPosition):
     message = {
@@ -76,7 +80,7 @@ def message_demn(causeCode, subCauseCode, detectionTime, eventPosition):
         "situation": {
             "informationQuality": 7,
             "eventType": {
-                "causeCode": 14,                    
+                "causeCode": 14,
                 "subCauseCode": 14
             }
         }
@@ -91,16 +95,18 @@ def message_demn(causeCode, subCauseCode, detectionTime, eventPosition):
 
     return json.dumps(message)
 
+
 def on_message(client, userdata, message):
     print("Received message '" + str(message.payload) + "' on topic '"
-        + message.topic + "' with QoS " + str(message.qos))
+          + message.topic + "' with QoS " + str(message.qos))
+
 
 def main():
 
     obu1 = mqtt.Client()
     obu2 = mqtt.Client()
     obu3 = mqtt.Client()
-    
+
     obu1.connect("192.168.98.20")
     obu2.connect("192.168.98.30")
     obu3.connect("192.168.98.40")
@@ -113,10 +119,9 @@ def main():
     obu2.subscribe("vanetza/out/denm")
     obu3.subscribe("vanetza/out/denm")
 
+    coordinates = [(40.675051, -8.573572), (40.675057, -8.573565), (40.675066, -8.573558),
+                   (40.675073, -8.573550), (40.675082, -8.573542), (40.675093, -8.573534)]
 
-    coordinates = [(40675051, -8573572), (40675057, -8573565), (40675066, -8573558),
-(40675073, -8573550), (40675082, -8573542), (40675093, -8573534)]
-    
     obu1.loop_start()
     obu2.loop_start()
     obu3.loop_start()
@@ -131,7 +136,7 @@ def main():
 
         obu1_animal = {}
 
-        for i in range(len(coordinates)-1):                               #0 a 4
+        for i in range(len(coordinates)-1):  # 0 a 4
 
             if i == 0:
                 obu1_coordenates["latitude"] = coordinates[i][0]
@@ -156,15 +161,16 @@ def main():
 
             obu3_coordenates["latitude"] = coordinates[i-1][0]
             obu3_coordenates["longitude"] = coordinates[i-1][1]
-            
+
             cam1 = message_cam(obu1_coordenates)
             cam2 = message_cam(obu2_coordenates)
             cam3 = message_cam(obu3_coordenates)
-            
+
             publish_cam(obu1, cam1)
             publish_cam(obu2, cam2)
             publish_cam(obu3, cam3)
-        
+            time.sleep(2)
+
         obu1_animal["latitude"] = coordinates[5][0]
         obu1_animal["longitude"] = coordinates[5][1]
         denm = message_demn(11, 1, time.time(), obu1_animal)
