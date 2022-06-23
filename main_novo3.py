@@ -8,8 +8,6 @@ import sqlite3
 
 queue = Queue()
 
-conn = sqlite3.connect("test.db")
-
 
 def publish_cam(client, coordenates):
 
@@ -53,8 +51,24 @@ def on_message(client, userdata, msg):
         queue.put(msg)
 
 
+def identificate_denm(object):
+
+    print("Object: {}".format(object[0][0]))
+    if object[0][0] == "Cão" or object[0][0] == "Vaca" or object[0][0] == "Gato" or object[0][0] == "Cavalo":
+        return (9, 11)
+    elif object == "Ciclista":
+        return (10, 12)
+
+    print("not identified")
+
+
 def launch_denm_producer(data):
-    print("producer")
+
+    conn = sqlite3.connect("test.db")
+    cursor = conn.cursor()
+
+    cursor.execute('''DELETE from MESSAGES ''')
+    conn.commit()
 
     obu = mqtt.Client()
     obu.on_connect = on_connect
@@ -62,21 +76,47 @@ def launch_denm_producer(data):
 
     obu.connect(data["ip"][0]["ipv4"])
 
-    count = 0
+    lastInstant = 0
 
     obu.loop_start()
 
     for instant in data["coordinates"][0]:
         coordenates = (data["coordinates"][0][instant]["latitude"],
                        data["coordinates"][0][instant]["longitude"])
+
         publish_cam(obu, coordenates)
+        print("{} sent CAM and is passing at ({},{})." .format(
+            data["obu"][0]["name"], coordenates[0], coordenates[1]))
+
+        cursor.execute('''SELECT COUNT(*) from MESSAGES ''')
+        result = cursor.fetchall()
+        if result[0][0] != 0:
+            cursor.execute('''SELECT * from MESSAGES LIMIT 1''')
+            msg = cursor.fetchall()
+            lastInstant = instant
+            print("DENM Message identificated on ({},{})".format(
+                data["coordinates"][0][instant]["latitude"], data["coordinates"][0][instant]["longitude"]))
+            break
+        time.sleep(2)
+
+    cause = identificate_denm(msg)
+    print("Cause: {}".format(cause))
+
+    publish_denm(obu, cause[0], cause[1], time.time(), (data["coordinates"][0][lastInstant]
+                 ["latitude"] + 0.000020, data["coordinates"][0][lastInstant]["longitude"]), 10)
+
+    count = 0
+
+    while count != 10:
+        coordenates = (data["coordinates"][0][lastInstant]["latitude"] + 0.000010,
+                       data["coordinates"][0][lastInstant]["longitude"])
+        publish_cam(obu, coordenates)
+        print("{} sent CAM and is stoping at ({},{})." .format(
+            data["obu"][0]["name"], coordenates[0], coordenates[1]))
         count += 1
+        time.sleep(2)
 
-        if count == 10:
-            publish_denm(obu, 11, 1, time.time(), (40.675093, -8.573534), 10)
-            count = 0
-        time.sleep(1)
-
+    obu.disconnect()
     obu.loop_stop()
 
 
@@ -85,7 +125,6 @@ def launch_denm_consumer(data):
     obu = mqtt.Client()
     obu.on_connect = on_connect
     obu.on_message = on_message
-    print(data["ip"][0]["ipv4"])
     obu.connect(data["ip"][0]["ipv4"])
 
     obu.loop_start()
@@ -98,13 +137,21 @@ def launch_denm_consumer(data):
             denm = json.loads(message.payload)
             for i in range(denm["fields"]["denm"]["management"]["validityDuration"]):
                 publish_cam(obu, coordenates)
-                time.sleep(1)
+                print("DENM received")
+                print("{} sent CAM and is stoping at ({},{})." .format(
+                    data["obu"][0]["name"], coordenates[0], coordenates[1]))
+                time.sleep(2)
+            break
         else:
             coordenates = (data["coordinates"][0][instant]["latitude"],
                            data["coordinates"][0][instant]["longitude"])
             publish_cam(obu, coordenates)
+            print("{} sent CAM and is passing at ({},{})." .format(
+                data["obu"][0]["name"], coordenates[0], coordenates[1]))
             latest = instant
-            time.sleep(1)
+            time.sleep(2)
+
+    obu.disconnect()
 
     obu.loop_stop()
 
