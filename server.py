@@ -12,8 +12,8 @@ print("Server listening on Port " + str(PORT))
 # A set of connected ws clients
 connected = set()
 
-conn = sqlite3.connect("test.db")
-cursor = conn.cursor()
+dbConnection = sqlite3.connect("test.db")
+cursor = dbConnection.cursor()
 
 
 # The main behavior function for this server
@@ -27,7 +27,7 @@ async def echo(websocket, path):
         async for message in websocket:
             print("Received message from client: " + message)
             cursor.execute('''INSERT INTO MESSAGES VALUES (?)''', [message])
-            conn.commit()
+            dbConnection.commit()
             # Send a response to all connected clients except sender
             for conn in connected:
                 if conn != websocket:
@@ -41,7 +41,7 @@ async def echo(websocket, path):
 
 def main():
     # Start the server
-    start_server = websockets.serve(echo, "172.20.10.6", PORT)
+    start_server = websockets.serve(echo, "192.168.253.1", PORT)
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
 

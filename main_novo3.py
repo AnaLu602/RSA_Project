@@ -44,8 +44,6 @@ def on_connect(client, userdata, flags, rc):
 
 
 def on_message(client, userdata, msg):
-    # print("Received message '" + str(msg.payload) + "' on topic '"
-    #       + msg.topic + "' with QoS " + str(msg.qos))
     if msg.topic == "vanetza/out/denm":
         print("on message denm")
         queue.put(msg)
@@ -59,7 +57,7 @@ def identificate_denm(object):
     elif object == "Ciclista":
         return (10, 12)
 
-    print("not identified")
+    return "not defined"
 
 
 def launch_denm_producer(data):
@@ -77,6 +75,8 @@ def launch_denm_producer(data):
     obu.connect(data["ip"][0]["ipv4"])
 
     lastInstant = 0
+
+    msg = None
 
     obu.loop_start()
 
@@ -99,22 +99,24 @@ def launch_denm_producer(data):
             break
         time.sleep(2)
 
-    cause = identificate_denm(msg)
-    print("Cause: {}".format(cause))
+    if msg != None:
+        cause = identificate_denm(msg)
+        print("Cause: {}".format(cause))
 
-    publish_denm(obu, cause[0], cause[1], time.time(), (data["coordinates"][0][lastInstant]
-                 ["latitude"] + 0.000020, data["coordinates"][0][lastInstant]["longitude"]), 10)
+        if cause != "not defined":
+            publish_denm(obu, cause[0], cause[1], time.time(), (data["coordinates"][0][lastInstant]
+                                                                ["latitude"] + 0.000020, data["coordinates"][0][lastInstant]["longitude"]), 10)
 
-    count = 0
+            count = 0
 
-    while count != 10:
-        coordenates = (data["coordinates"][0][lastInstant]["latitude"] + 0.000010,
-                       data["coordinates"][0][lastInstant]["longitude"])
-        publish_cam(obu, coordenates)
-        print("{} sent CAM and is stoping at ({},{})." .format(
-            data["obu"][0]["name"], coordenates[0], coordenates[1]))
-        count += 1
-        time.sleep(2)
+            while count != 10:
+                coordenates = (data["coordinates"][0][lastInstant]["latitude"] + 0.000010,
+                               data["coordinates"][0][lastInstant]["longitude"])
+                publish_cam(obu, coordenates)
+                print("{} sent CAM and is stoping at ({},{})." .format(
+                    data["obu"][0]["name"], coordenates[0], coordenates[1]))
+                count += 1
+                time.sleep(2)
 
     obu.disconnect()
     obu.loop_stop()
