@@ -37,7 +37,7 @@ def publish_denm(client, causeCode, subCauseCode, detectionTime, eventPosition, 
 
 def on_connect(client, userdata, flags, rc):
 
-    # client.subscribe("vanetza/out/cam")
+    client.subscribe("vanetza/out/cam")
     client.subscribe("vanetza/out/denm")
 
     print("connected")
@@ -45,7 +45,6 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata, msg):
     if msg.topic == "vanetza/out/denm":
-        print("on message denm")
         queue.put(msg)
 
 
@@ -139,7 +138,10 @@ def launch_denm_consumer(data):
             denm = json.loads(message.payload)
             for i in range(denm["fields"]["denm"]["management"]["validityDuration"]):
                 publish_cam(obu, coordenates)
-                print("DENM received")
+                print("DENM received with location ({},{}) and with causeCode {} and subCauseCode {}.".format(
+                    denm["fields"]["denm"]["management"]["eventPosition"]["latitude"], denm[
+                        "fields"]["denm"]["management"]["eventPosition"]["longitude"],
+                    denm["fields"]["denm"]["situation"]["eventType"]["causeCode"], denm["fields"]["denm"]["situation"]["eventType"]["subCauseCode"]))
                 print("{} sent CAM and is stoping at ({},{})." .format(
                     data["obu"][0]["name"], coordenates[0], coordenates[1]))
                 time.sleep(2)
